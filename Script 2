@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Function to display system information
+function showsystem {
+    echo "1) Operating System Type:"
+    echo "$(lsb_release -sd)"
+
+    echo -e "\n2) Computer CPU Information:"
+    echo "$(lscpu)"
+
+    echo -e "\n3) Memory Information:"
+    echo "$(free -h)"
+
+    echo -e "\n4) Hard Disk Information:"
+    echo "$(lsblk)"
+
+    echo -e "\n5) File System (Mounted):"
+    echo "$(df -h)"
+}
+
+# Display information
+showsystem
