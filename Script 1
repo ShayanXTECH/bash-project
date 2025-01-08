@@ -1,0 +1,87 @@
+# Function to display  date and time
+datetime() {
+  datetimee=$(date +"%Y-%m-%d %H:%M:%S")
+  dialog --infobox "Current Date and Time:\n$datetimee" 8 40
+  sleep 2
+}
+
+# Function to display calendar and add information
+calendar() {
+  # Display a calendar and get the selected date
+  dialog --calendar "Select a date to add information:" 0 0 2>/tmp/calendar_result
+  selecteddate=$(cat /tmp/calendar_result)
+
+  # If a date is selected, prompt for additional information
+  if [ -n "$selecteddate" ]; then
+    dialog --inputbox "Add relevant information for $selecteddate:" 8 40 2>/tmp/info_result
+    info=$(cat /tmp/info_result)
+    echo "Information for $selecteddate: $info"
+    sleep 2
+  fi
+}
+
+# Function to delete a file
+deletefile() {
+  # Prompt for the directory path or use the current directory
+  dialog --inputbox "Enter the directory path (leave blank for current directory):" 8 40 2>/tmp/dir_result
+  directory=$(cat /tmp/dir_result)
+  [ -z "$directory" ] && directory="."
+
+  # Get the list of files in the specified directory
+  files=$(ls "$directory")
+
+  # Display files with a numbered list
+  file_list=""
+  index=1
+  for file in $files; do
+    file_list+=" $index \"$file\""
+    ((index++))
+  done
+
+  # Prompt the user to select a file for deletion
+  dialog --menu "Select a file to delete:" 0 0 0 $file_list 2>/tmp/delete_result
+  selected_index=$(cat /tmp/delete_result)
+
+  # If a file is selected, confirm deletion
+  if [ -n "$selected_index" ]; then
+    selected_file=$(ls "$directory" | sed -n "${selected_index}p")
+
+    dialog --yesno "Are you sure you want to delete $selected_file?" 8 40
+    response=$?
+
+    # If the user confirms, attempt to delete the file
+    if [ $response -eq 0 ]; then
+      full_path="$directory/$selected_file"
+      rm -i "$full_path" # Use -i for confirmation
+      delete_status=$?
+
+      # Check if deletion was successful
+      if [ $delete_status -eq 0 ]; then
+        dialog --infobox "$selected_file deleted successfully." 8 40
+        sleep 2
+      else
+        dialog --msgbox "Error deleting $selected_file." 8 40
+      fi
+    fi
+  fi
+}
+
+# Main menu
+while true; do
+  # Display the main menu and get the user's choice
+  menu_choice=$(dialog --menu "Select an option:" 0 0 0 \
+    1 "Date/Time" \
+    2 "Calendar" \
+    3 "Delete" \
+    4 "Exit" \
+    2>&1 >/dev/tty)
+
+  # Act based on the user's choice
+  case $menu_choice in
+    1) datetime ;;
+    2) calendar ;;
+    3) deletefile ;;
+    4) exit ;;
+    *) dialog --msgbox "Invalid choice. Please try again." 8 40 ;;
+  esac
+done
